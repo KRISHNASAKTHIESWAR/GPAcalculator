@@ -1,101 +1,175 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import Link from "next/link";
+
+type Subject = {
+  name: string;
+  credits: number;
+  grade: string;
+};
+
+export default function GPACalculator() {
+  const [subjects, setSubjects] = useState<Subject[]>([{ name: "", credits: 0, grade: "" }]);
+  const [sgpa, setSGPA] = useState<number | null>(null);
+  const [cgpa, setCGPA] = useState<number | null>(null);
+  const [previousCGPA, setPreviousCGPA] = useState<number>(0);
+
+  const gradePoints: { [key: string]: number } = {
+    O: 10,
+    "A+": 9,
+    A: 8,
+    "B+": 7,
+    B: 6,
+    C: 5,
+    RE: 0,
+  };
+
+  const addSubject = () => {
+    setSubjects([...subjects, { name: "", credits: 0, grade: "" }]);
+  };
+
+  const removeSubject = (index: number) => {
+    setSubjects(subjects.filter((_, i) => i !== index));
+  };
+
+  const handleSubjectChange = (index: number, field: keyof Subject, value: string | number) => {
+    const newSubjects = [...subjects];
+    newSubjects[index] = { ...newSubjects[index], [field]: value };
+    setSubjects(newSubjects);
+  };
+
+  const calculateGPA = () => {
+    let totalGradePoints = 0;
+    let totalCredits = 0;
+
+    subjects.forEach((subject) => {
+      if (subject.credits > 0 && gradePoints[subject.grade] !== undefined) {
+        totalGradePoints += subject.credits * gradePoints[subject.grade];
+        totalCredits += subject.credits;
+      }
+    });
+
+    const calculatedSGPA = totalCredits > 0 ? totalGradePoints / totalCredits : 0;
+    setSGPA(Number.parseFloat(calculatedSGPA.toFixed(2)));
+
+    const calculatedCGPA = previousCGPA > 0 ? (calculatedSGPA + previousCGPA) / 2 : calculatedSGPA;
+    setCGPA(Number.parseFloat(calculatedCGPA.toFixed(2)));
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="container mx-auto p-4">
+      <Card className="w-full max-w-2xl mx-auto bg-gray-800 text-white">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-center">
+            <Link href="https://cit-celestius.vercel.app/" target="_blank" className="text-blue-400 hover:text-blue-300">
+              Celestius
+            </Link>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {subjects.map((subject, index) => (
+              <div key={index} className="flex items-center space-x-2">
+                {/* Subject Name Input */}
+                <Input
+                  placeholder="Subject Name"
+                  value={subject.name}
+                  onChange={(e) => handleSubjectChange(index, "name", e.target.value)}
+                  className="flex-grow bg-gray-700 text-white"
+                />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+                {/* Credits Input */}
+                <Input
+                  type="number"
+                  placeholder="Credits"
+                  min="0"
+                  value={subject.credits || ""}
+                  onChange={(e) => handleSubjectChange(index, "credits", Number(e.target.value) || 0)}
+                  className="w-20 bg-gray-700 text-white"
+                />
+
+                {/* Grade Select Dropdown */}
+                <Select 
+                  value={subject.grade} 
+                  onValueChange={(value) => handleSubjectChange(index, "grade", value)}
+                >
+                  <SelectTrigger className="w-24 bg-gray-700 text-white border border-gray-600">
+                    <SelectValue>
+                      {subject.grade || "Grade"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent 
+                    className="bg-gray-700 text-white border border-gray-600 rounded-md"
+                    side="bottom"
+                    align="center"
+                  >
+                    {Object.keys(gradePoints).map((grade) => (
+                      <SelectItem 
+                        key={grade} 
+                        value={grade}
+                        className="hover:bg-gray-600 focus:bg-gray-600"
+                      >
+                        {grade}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Remove Button */}
+                <Button variant="destructive" size="icon" onClick={() => removeSubject(index)} disabled={subjects.length === 1}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+
+            {/* Add Subject Button */}
+            <Button onClick={addSubject} className="w-full bg-blue-600 hover:bg-blue-700">
+              <Plus className="mr-2 h-4 w-4" /> Add Subject
+            </Button>
+          </div>
+
+          {/* Previous CGPA Input */}
+          <div className="mt-4">
+            <Label htmlFor="previousCGPA" className="text-white">
+              Previous CGPA
+            </Label>
+            <Input
+              id="previousCGPA"
+              type="number"
+              min="0"
+              step="0.01"
+              value={previousCGPA || ""}
+              onChange={(e) => setPreviousCGPA(Number(e.target.value) || 0)}
+              placeholder="Enter previous CGPA"
+              className="bg-gray-700 text-white"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          </div>
+
+          {/* Calculate Button */}
+          <Button onClick={calculateGPA} className="w-full mt-4 bg-green-600 hover:bg-green-700">
+            Calculate GPA
+          </Button>
+
+          {/* Results Display */}
+          {sgpa !== null && cgpa !== null && (
+            <div className="mt-4 space-y-2 text-center">
+              <p className="text-lg font-semibold">
+                SGPA: <span className="text-blue-400">{sgpa}</span>
+              </p>
+              <p className="text-lg font-semibold">
+                CGPA: <span className="text-blue-400">{cgpa}</span>
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
