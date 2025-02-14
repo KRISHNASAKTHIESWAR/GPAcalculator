@@ -68,7 +68,7 @@ export default function GPACalculator() {
       <Card className="w-full max-w-2xl mx-auto bg-gray-800 text-white">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-center">
-            <Link href="https://cit-celestius.vercel.app/" target="_blank" className="text-blue-400 hover:text-blue-300">
+            <Link href="https://cit-celestius.vercel.app/" target="_blank" className="text-warning hover:text-warning-300">
               Celestius
             </Link>
           </CardTitle>
